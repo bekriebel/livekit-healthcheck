@@ -12,31 +12,29 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-
-
 func main() {
 	// Get CLI parameters
 	app := &cli.App{
-		Name:        "livekit-healthcheck",
-		Usage:       "Check the health of the livekit server by attempting to connect to a room",
+		Name:  "livekit-healthcheck",
+		Usage: "Check the health of the livekit server by attempting to connect to a room",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "keys",
-				Usage:   "api keys (key: secret\\n)",
-				EnvVars: []string{"LIVEKIT_KEYS"},
+				Name:     "keys",
+				Usage:    "api keys (key: secret\\n)",
+				EnvVars:  []string{"LIVEKIT_KEYS"},
 				Required: true,
 			},
 			&cli.StringFlag{
-				Name:    "host",
-				Usage:   "host (incl. port) of the livekit server to connect to (example: wss://livekit.example.com:7880)",
-				EnvVars: []string{"LIVEKIT_HOST"},
+				Name:     "host",
+				Usage:    "host (incl. port) of the livekit server to connect to (example: wss://livekit.example.com:7880)",
+				EnvVars:  []string{"LIVEKIT_HOST"},
 				Required: true,
 			},
 			&cli.DurationFlag{
 				Name:    "timeout",
 				Usage:   "time before giving up on connection to host",
 				EnvVars: []string{"LIVEKIT_HEALTHCHECK_TIMEOUT"},
-				Value: 5 * time.Second,
+				Value:   5 * time.Second,
 			},
 		},
 		Action: healthcheck,
@@ -59,14 +57,14 @@ func healthcheck(c *cli.Context) error {
 	}
 
 	// Create a random room name
-  roomName := funk.RandomString(16)
+	roomName := funk.RandomString(16)
 
 	// Set identity
-  identity := "livekit-healthcheck"
+	identity := "livekit-healthcheck"
 
 	// Create connection channel to watch for timeout
-	connectChannel := make (chan lksdk.Room, 1)
-	
+	connectChannel := make(chan lksdk.Room, 1)
+
 	go func() {
 		// Attempt to connect to the room
 		room, err := lksdk.ConnectToRoom(host, lksdk.ConnectInfo{
