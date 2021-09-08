@@ -24,11 +24,19 @@ func main() {
 				Name:    "keys",
 				Usage:   "api keys (key: secret\\n)",
 				EnvVars: []string{"LIVEKIT_KEYS"},
+				Required: true,
 			},
 			&cli.StringFlag{
 				Name:    "host",
 				Usage:   "host (incl. port) of the livekit server to connect to (example: wss://livekit.example.com:7880)",
 				EnvVars: []string{"LIVEKIT_HOST"},
+				Required: true,
+			},
+			&cli.DurationFlag{
+				Name:    "timeout",
+				Usage:   "time before giving up on connection to host",
+				EnvVars: []string{"LIVEKIT_HEALTHCHECK_TIMEOUT"},
+				Value: 5 * time.Second,
 			},
 		},
 		Action: healthcheck,
@@ -41,20 +49,10 @@ func main() {
 }
 
 func healthcheck(c *cli.Context) error {
-	// Check that host is set
-	if !c.IsSet("host") {
-		cli.ShowAppHelp(c)
-		fmt.Printf("\n-----\n")
-		return errors.New("error: host value not set")
-	}
+	// Get host
 	host := c.String("host")
 
-	// Check that keys are set
-	if !c.IsSet("keys") {
-		cli.ShowAppHelp(c)
-		fmt.Printf("\n-----\n")
-		return errors.New("error: keys not set")
-	}
+	// Get API key/secret
 	apiKey, apiSecret, err := unmarshalKeys(c.String("keys"))
 	if err != nil {
 		return errors.New("Could not parse keys, it needs to be \"key: secret\", one per line")
@@ -94,7 +92,7 @@ func healthcheck(c *cli.Context) error {
 			fmt.Println("failed to connect to host; identity did not match expected result")
 			os.Exit(1)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(c.Duration("timeout")):
 		fmt.Println("failed to connect to host; timeout waiting for host")
 		os.Exit(1)
 	}
