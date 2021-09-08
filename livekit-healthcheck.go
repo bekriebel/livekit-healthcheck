@@ -3,7 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	lksdk "github.com/livekit/server-sdk-go"
@@ -88,6 +90,11 @@ func unmarshalKeys(keys string) (apiKey string, apiSecret string, err error) {
 }
 
 func main() {
+	// Add randomization based on host name (for a consistent room name)
+	hostname, _ := os.Hostname()
+	hostInt, _ := strconv.ParseInt(hostname, 36, 64)
+	rand.Seed(hostInt)
+
 	// Get CLI parameters
 	app := &cli.App{
 		Name:  "livekit-healthcheck",
