@@ -48,7 +48,9 @@ func healthcheck(c *cli.Context) error {
 			err = fmt.Errorf("failed to connect to host; %v", err)
 		}
 		connectChannel <- ConnectResult{room, err}
-		room.Disconnect()
+		if room != nil {
+			room.Disconnect()
+		}
 	}()
 
 	// Watch for timeout
