@@ -100,10 +100,10 @@ func main() {
 				Required: true,
 			},
 			&cli.StringFlag{
-				Name:     "host",
-				Usage:    "host (incl. port) of the livekit server to connect to (example: wss://livekit.example.com:7880)",
-				EnvVars:  []string{"LIVEKIT_HOST"},
-				Required: true,
+				Name:    "host",
+				Usage:   "host (incl. port) of the livekit server to connect to (example: wss://livekit.example.com:7880)",
+				EnvVars: []string{"LIVEKIT_HOST"},
+				Value:   "ws://localhost:7880",
 			},
 			&cli.DurationFlag{
 				Name:    "timeout",
