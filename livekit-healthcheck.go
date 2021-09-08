@@ -12,6 +12,79 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type ConnectResult struct {
+	room *lksdk.Room
+	err  error
+}
+
+func healthcheck(c *cli.Context) error {
+	// Get host
+	host := c.String("host")
+
+	// Get API key/secret
+	apiKey, apiSecret, err := unmarshalKeys(c.String("keys"))
+	if err != nil {
+		return errors.New("could not parse keys, it needs to be \"key: secret\", one per line")
+	}
+
+	// Create a random room name
+	roomName := funk.RandomString(16)
+
+	// Set identity
+	identity := "livekit-healthcheck"
+
+	// Create connection channel to watch for timeout
+	connectChannel := make(chan ConnectResult, 1)
+
+	go func() {
+		// Attempt to connect to the room
+		room, err := lksdk.ConnectToRoom(host, lksdk.ConnectInfo{
+			APIKey:              apiKey,
+			APISecret:           apiSecret,
+			RoomName:            roomName,
+			ParticipantIdentity: identity,
+		})
+		if err != nil {
+			err = fmt.Errorf("failed to connect to host; %v", err)
+		}
+		connectChannel <- ConnectResult{room, err}
+		room.Disconnect()
+	}()
+
+	// Watch for timeout
+	select {
+	case connectResult := <-connectChannel:
+		if connectResult.err != nil {
+			return connectResult.err
+		}
+		if connectResult.room.LocalParticipant.Identity() == identity {
+			fmt.Println("successfully connected to host")
+		} else {
+			return errors.New("failed to connect to host; identity did not match expected result")
+		}
+	case <-time.After(c.Duration("timeout")):
+		return errors.New("failed to connect to host; timeout waiting for host")
+	}
+
+	return nil
+}
+
+func unmarshalKeys(keys string) (apiKey string, apiSecret string, err error) {
+	// Get keys in standard livekit format. Use the last key that is set.
+	temp := make(map[string]interface{})
+	if err = yaml.Unmarshal([]byte(keys), temp); err != nil {
+		return
+	}
+
+	for key, val := range temp {
+		if secret, ok := val.(string); ok {
+			apiKey = key
+			apiSecret = secret
+		}
+	}
+	return
+}
+
 func main() {
 	// Get CLI parameters
 	app := &cli.App{
@@ -44,72 +117,4 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-func healthcheck(c *cli.Context) error {
-	// Get host
-	host := c.String("host")
-
-	// Get API key/secret
-	apiKey, apiSecret, err := unmarshalKeys(c.String("keys"))
-	if err != nil {
-		return errors.New("Could not parse keys, it needs to be \"key: secret\", one per line")
-	}
-
-	// Create a random room name
-	roomName := funk.RandomString(16)
-
-	// Set identity
-	identity := "livekit-healthcheck"
-
-	// Create connection channel to watch for timeout
-	connectChannel := make(chan lksdk.Room, 1)
-
-	go func() {
-		// Attempt to connect to the room
-		room, err := lksdk.ConnectToRoom(host, lksdk.ConnectInfo{
-			APIKey:              apiKey,
-			APISecret:           apiSecret,
-			RoomName:            roomName,
-			ParticipantIdentity: identity,
-		})
-		if err != nil {
-			fmt.Printf("failed to connect to host; %v\n", err)
-			os.Exit(1)
-		}
-		connectChannel <- *room
-		room.Disconnect()
-	}()
-
-	// Watch for timeout
-	select {
-	case room := <-connectChannel:
-		if room.LocalParticipant.Identity() == identity {
-			fmt.Println("successfully connected to host")
-		} else {
-			fmt.Println("failed to connect to host; identity did not match expected result")
-			os.Exit(1)
-		}
-	case <-time.After(c.Duration("timeout")):
-		fmt.Println("failed to connect to host; timeout waiting for host")
-		os.Exit(1)
-	}
-
-	return nil
-}
-
-func unmarshalKeys(keys string) (apiKey string, apiSecret string, err error) {
-	// Get keys in standard livekit format. Use the last key that is set.
-	temp := make(map[string]interface{})
-	if err = yaml.Unmarshal([]byte(keys), temp); err != nil {
-		return
-	}
-
-	for key, val := range temp {
-		if secret, ok := val.(string); ok {
-			apiKey = key
-			apiSecret = secret
-		}
-	}
-	return
 }
