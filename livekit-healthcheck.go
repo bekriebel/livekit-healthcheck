@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	livekit "github.com/livekit/protocol/proto"
 	lksdk "github.com/livekit/server-sdk-go"
 	"github.com/thoas/go-funk"
 	"github.com/urfave/cli/v2"
@@ -48,11 +50,18 @@ func healthcheck(c *cli.Context) error {
 		})
 		if err != nil {
 			err = fmt.Errorf("failed to connect to host; %v", err)
+		} else if room != nil {
+			// Disconnect from and delete the room
+			room.Disconnect()
+			roomClient := lksdk.NewRoomServiceClient(host, apiKey, apiSecret)
+			_, deleteErr := roomClient.DeleteRoom(context.Background(), &livekit.DeleteRoomRequest{
+				Room: roomName,
+			})
+			if deleteErr != nil {
+				fmt.Printf("failed to delete room; %v\n", deleteErr)
+			}
 		}
 		connectChannel <- ConnectResult{room, err}
-		if room != nil {
-			room.Disconnect()
-		}
 	}()
 
 	// Watch for timeout
@@ -110,7 +119,7 @@ func main() {
 				Name:    "host",
 				Usage:   "host (incl. port) of the livekit server to connect to (example: wss://livekit.example.com:7880)",
 				EnvVars: []string{"LIVEKIT_HOST"},
-				Value:   "ws://localhost:7880",
+				Value:   "http://localhost:7880",
 			},
 			&cli.DurationFlag{
 				Name:    "timeout",

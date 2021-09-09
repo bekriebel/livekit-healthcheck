@@ -12,7 +12,6 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jxskiss/base62 v0.0.0-20191017122030-4f11678b909b // indirect
 	github.com/lithammer/shortuuid/v3 v3.0.7 // indirect
-	github.com/livekit/protocol v0.8.3 // indirect
 	github.com/pion/datachannel v1.4.21 // indirect
 	github.com/pion/dtls/v2 v2.0.9 // indirect
 	github.com/pion/ice/v2 v2.1.10 // indirect
@@ -42,6 +41,7 @@ require (
 
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
+	github.com/livekit/protocol v0.8.3
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/thoas/go-funk v0.9.0
